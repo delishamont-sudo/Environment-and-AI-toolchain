@@ -17,3 +17,11 @@ The code differences show the effect of the more precise workflow. `SettingsForm
 Round 2 took longer initially, but it required less reliance on assumptions because the requirements and verification steps were explicit. The detailed prompt also made accessibility and edge cases part of the implementation rather than things discovered only during review. The main lesson is that effective AI-assisted development is not just generating code quickly; it is specifying expected behavior, identifying risks, and requiring verification.
 
 Going forward, I will use explicit validation rules, accessibility requirements, edge cases, and automated tests when asking AI to implement project features.
+
+## Accessibility
+
+Round 1's output was not accessibility-void: it already included `<label htmlFor>` associations, `aria-invalid`, `aria-describedby` pointing to error text, and `role="alert"` on error messages, so the base wasn't neglected. Round 2's precise prompt still improved on this in two concrete ways: it added the `required` attribute to both inputs, giving assistive technology and native browser validation an explicit signal that round 1 omitted; and it namespaced element IDs (`name` → `settings-name`, `email` → `settings-email`), reducing the risk of ID collisions breaking `aria-describedby`/`htmlFor` associations if the form is reused alongside other forms. Round 2 also fixed a subtle correctness issue affecting accessibility: round 1's `handleBlur` marked a field as touched without saving its latest value, meaning error state and ARIA attributes could update against stale data; round 2 captures the field's current value in the same update.
+
+## Edge Cases
+
+Beyond the numeric-only name issue, round 2's test suite formalized coverage for several edge cases that round 1 handled inconsistently or only informally: empty name and empty email on blur, invalid email format on both blur and submit, and numeric-only names on submit. It also tests the success path explicitly, confirming a success message appears after valid submission. Round 1 handled some of these cases at runtime (basic empty-field and format checks existed), but with no automated tests, correctness relied entirely on manual spot-checking rather than a repeatable, verifiable suite.
