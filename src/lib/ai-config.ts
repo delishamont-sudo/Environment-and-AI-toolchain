@@ -48,4 +48,5 @@ Guidelines:
 export const MODEL_SETTINGS = {
   temperature: 0.7, // higher = more varied/creative responses
   maxOutputTokens: 500, // caps response length to keep chat snappy
+  maxRetries: 0, // don't burn extra quota retrying rate-limited requests
 };

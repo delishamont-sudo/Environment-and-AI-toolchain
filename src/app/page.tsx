@@ -15,6 +15,9 @@
  *   - Auto-scroll that only pins to bottom while the user is already
  *     there, and releases the moment they scroll up manually.
  *   - Mobile-friendly input bar that stays usable at phone width.
+ *   - Aborting via Stop throws an AbortError through useChat's error
+ *     state; we filter that out so stopping doesn't look like a
+ *     failure to the user.
  * ------------------------------------------------------------------
  */
 
@@ -37,9 +40,6 @@ export default function Chat() {
   const isBusy = isThinking || isStreaming;
 
   // --- Auto-scroll logic -------------------------------------------------
-  // Only auto-scroll to bottom if the user was already at (or near) the
-  // bottom before new content arrived. If they've scrolled up to read
-  // earlier messages, we leave their scroll position alone.
   useEffect(() => {
     const container = scrollContainerRef.current;
     if (container && isPinnedToBottom) {
@@ -52,7 +52,6 @@ export default function Chat() {
     if (!container) return;
     const distanceFromBottom =
       container.scrollHeight - container.scrollTop - container.clientHeight;
-    // within 80px of bottom counts as "at bottom"
     setIsPinnedToBottom(distanceFromBottom < 80);
   }
 
@@ -69,7 +68,7 @@ export default function Chat() {
     if (!input.trim() || isBusy) return;
     sendMessage({ text: input });
     setInput("");
-    setIsPinnedToBottom(true); // sending a message should re-pin
+    setIsPinnedToBottom(true);
   }
 
   return (
@@ -130,10 +129,6 @@ export default function Chat() {
             </div>
           ))}
 
-          {/* Thinking indicator — shown before first token arrives.
-              Rendered as its own bubble in the same position/style an
-              assistant message will occupy, so the handoff to real
-              text feels like a continuation, not a swap. */}
           {isThinking && (
             <div className="flex justify-start">
               <div className="bg-gray-100 rounded-2xl rounded-bl-sm px-4 py-3 flex gap-1">
@@ -145,7 +140,6 @@ export default function Chat() {
           )}
         </div>
 
-        {/* Jump to latest button — appears when user has scrolled up */}
         {!isPinnedToBottom && (
           <button
             onClick={jumpToLatest}
@@ -156,10 +150,12 @@ export default function Chat() {
         )}
       </div>
 
-      {/* Error banner */}
-      {error && (
+      {/* Error banner — filters out AbortError so clicking Stop
+          doesn't look like a failure */}
+      {error && error.name !== "AbortError" && (
         <div className="mx-4 mb-2 px-3 py-2 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700">
-          Something went wrong: {error.message.includes("quota") || error.message.includes("429")
+          Something went wrong:{" "}
+          {error.message.includes("quota") || error.message.includes("429")
             ? "Rate limit reached. Please wait a moment and try again."
             : "Failed to get a response. Please try again."}
         </div>

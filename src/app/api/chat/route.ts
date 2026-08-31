@@ -28,6 +28,7 @@ export async function POST(req: Request) {
     messages: await convertToModelMessages(messages),
     temperature: MODEL_SETTINGS.temperature,
     maxOutputTokens: MODEL_SETTINGS.maxOutputTokens,
+    maxRetries: MODEL_SETTINGS.maxRetries,
   });
 
   // toUIMessageStreamResponse() formats the stream in the exact
